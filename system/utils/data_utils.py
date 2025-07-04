@@ -6,11 +6,12 @@ from collections import defaultdict
 
 def read_data(dataset, idx, is_train=True):
     if is_train:
-        data_dir = os.path.join('../dataset', dataset, 'train/')
+        data_dir = os.path.join(os.curdir, 'dataset', dataset, 'train')
     else:
-        data_dir = os.path.join('../dataset', dataset, 'test/')
+        data_dir = os.path.join(os.curdir, 'dataset', dataset, 'test')
 
-    file = data_dir + str(idx) + '.npz'
+    # file = data_dir + str(idx) + '.npz'
+    file = os.path.join(data_dir, str(idx) + '.npz')
     with open(file, 'rb') as f:
         data = np.load(f, allow_pickle=True)['data'].tolist()
     return data
