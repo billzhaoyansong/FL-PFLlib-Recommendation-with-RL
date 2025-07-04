@@ -44,6 +44,7 @@ class Server(ABC):
 
         self.clients = []
         self.selected_clients = []
+        self.selected_clients_per_round = []
         self.train_slow_mask = []
         self.send_slow_mask = []
 
@@ -145,7 +146,8 @@ class Server(ABC):
         else:
             self.current_num_join_clients = self.num_join_clients
         selected_clients = list(np.random.choice(self.clients, self.current_num_join_clients, replace=False))
-
+        # Record selected client IDs for this round
+        self.selected_clients_per_round.append([c.id for c in selected_clients])
         return selected_clients
 
     def send_models(self):
@@ -369,6 +371,9 @@ class Server(ABC):
             self.rs_train_loss.append(train_loss)
         else:
             loss.append(train_loss)
+
+        if acc == None:
+            self.rs_test_auc.append(test_auc)
 
         print("Averaged Train Loss: {:.4f}".format(train_loss))
         print("Averaged Test Accuracy: {:.4f}".format(test_acc))

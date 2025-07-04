@@ -60,6 +60,7 @@ from flcore.trainmodel.transformer import *
 
 from utils.result_utils import average_data
 from utils.mem_utils import MemReporter
+from utils.data_utils import save_metrics_plots
 
 logger = logging.getLogger()
 logger.setLevel(logging.ERROR)
@@ -188,6 +189,7 @@ def run(args):
             args.model.fc = nn.Identity()
             args.model = BaseHeadSplit(args.model, args.head)
             server = FedAvg(args, i)
+            server.selected_clients_per_round = []
 
         elif args.algorithm == "Local":
             server = Local(args, i)
@@ -369,6 +371,9 @@ def run(args):
             raise NotImplementedError
 
         server.train()
+
+        # Save metrics as line charts and client selection heatmap
+        save_metrics_plots(server, dataset=args.dataset, algorithm=args.algorithm)
 
         time_list.append(time.time()-start)
 

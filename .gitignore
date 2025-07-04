@@ -2,3 +2,5 @@
 /system/models
 *__pycache__*
 /MNIST
+/models
+/plots

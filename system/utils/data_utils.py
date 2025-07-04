@@ -2,6 +2,8 @@ import numpy as np
 import os
 import torch
 from collections import defaultdict
+import matplotlib.pyplot as plt
+from datetime import datetime
 
 
 def read_data(dataset, idx, is_train=True):
@@ -56,4 +58,70 @@ def process_Shakespeare(data):
     X = torch.Tensor(data['x']).type(torch.int64)
     y = torch.Tensor(data['y']).type(torch.int64)
     return [(x, y) for x, y in zip(X, y)]
+
+
+def save_metrics_plots(server, run_id=None, dataset=None, algorithm=None):
+    # Use datetime, dataset, and algorithm as run_id if not provided
+    if run_id is None:
+        dt_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        ds_str = dataset if dataset is not None else getattr(server, 'dataset', 'unknown')
+        algo_str = algorithm if algorithm is not None else getattr(server, 'algorithm', 'unknown')
+        run_id = f"{dt_str}_{ds_str}_{algo_str}"
+    plot_dir = "plots"
+    os.makedirs(plot_dir, exist_ok=True)
+
+    # Plot Train Loss
+    plt.figure()
+    plt.plot(server.rs_train_loss, label="Train Loss")
+    plt.xlabel("Evaluation Round")
+    plt.ylabel("Loss")
+    plt.title("Averaged Train Loss")
+    plt.legend()
+    plt.savefig(os.path.join(plot_dir, f"{run_id}_train_loss.png"))
+    plt.close()
+
+    # Plot Test Accuracy
+    plt.figure()
+    plt.plot(server.rs_test_acc, label="Test Accuracy")
+    plt.xlabel("Evaluation Round")
+    plt.ylabel("Accuracy")
+    plt.title("Averaged Test Accuracy")
+    plt.legend()
+    plt.savefig(os.path.join(plot_dir, f"{run_id}_test_acc.png"))
+    plt.close()
+
+    # Plot Test AUC
+    plt.figure()
+    plt.plot(server.rs_test_auc, label="Test AUC")
+    plt.xlabel("Evaluation Round")
+    plt.ylabel("AUC")
+    plt.title("Averaged Test AUC")
+    plt.legend()
+    plt.savefig(os.path.join(plot_dir, f"{run_id}_test_auc.png"))
+    plt.close()
+
+    # Plot selected clients as a heatmap (optional)
+    if server.selected_clients_per_round:
+        # Create a 2D array: rows=rounds, cols=clients, 1 if selected, 0 otherwise
+        num_rounds = len(server.selected_clients_per_round)
+        num_clients = server.num_clients
+        selection_matrix = np.zeros((num_rounds, num_clients))
+        for r, selected in enumerate(server.selected_clients_per_round):
+            for cid in selected:
+                selection_matrix[r, cid] = 1
+        plt.figure(figsize=(12, 6))
+        plt.imshow(selection_matrix, aspect='auto', cmap='Greys')
+        plt.xlabel("Client ID")
+        plt.ylabel("Round")
+        plt.title("Client Selection per Round")
+        plt.colorbar(label="Selected (1) / Not Selected (0)")
+        # Set integer ticks for axes, but limit number for readability
+        max_xticks = 20
+        max_yticks = 20
+        xtick_step = max(1, num_clients // max_xticks)
+        ytick_step = max(1, num_rounds // max_yticks)
+        plt.xticks(np.arange(0, num_clients, xtick_step))
+        plt.yticks(np.arange(0, num_rounds, ytick_step))
+        plt.savefig(os.path.join(plot_dir, f"{run_id}_client_selection.png"))
+        plt.close()
 
